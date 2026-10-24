@@ -20,6 +20,8 @@ const client = new Client({
 
 const ALLOWED_USERS = ['YOUR_DISCORD_USER_ID_HERE'];
 
+let PRESET_MESSAGE = 'No preset set yet.';
+
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
 });
@@ -35,12 +37,76 @@ client.on('interactionCreate', async interaction => {
   }
 
   const command = interaction.commandName;
-  const times = interaction.options.getInteger('times');
-  const delaySeconds = interaction.options.getInteger('delay') || 2;
+
+  if (command === 'setpreset') {
+    const message = interaction.options.getString('message');
+    PRESET_MESSAGE = message;
+
+    return interaction.reply({
+      content: `✅ Preset message set to:\n\`\`\`\n${message}\n\`\`\``,
+      ephemeral: true,
+    });
+  }
+  
+  if (command === 'sendpreset') {
+    const channelId = interaction.options.getString('channelid');
+    const times = interaction.options.getInteger('times');
+    const delaySeconds = 1; 
+
+    if (PRESET_MESSAGE === 'No preset set yet.') {
+      return interaction.reply({
+        content: '❌ No preset message has been set yet. Use `/setpreset` first.',
+        ephemeral: true,
+      });
+    }
+
+    await interaction.deferReply({ ephemeral: true });
+
+    try {
+      const channel = await client.channels.fetch(channelId);
+      if (!channel || !channel.isTextBased()) {
+        return interaction.editReply({ content: 'Invalid channel or not a text channel.' });
+      }
+
+      const confirmEmbed = new EmbedBuilder()
+        .setTitle('Confirm Preset Send')
+        .setColor(0xEB459E)
+        .addFields(
+          { name: 'Channel', value: `${channel.name} (\`${channel.id}\`)`, inline: true },
+          { name: 'Times', value: `${times}`, inline: true },
+          { name: 'Delay', value: `1 second (fixed)`, inline: true },
+          { name: 'Preset Message', value: PRESET_MESSAGE.length > 1000 ? PRESET_MESSAGE.slice(0, 1000) + '...' : PRESET_MESSAGE }
+        );
+
+      await handleConfirmation(interaction, confirmEmbed, async () => {
+        let success = 0;
+        let failed = 0;
+
+        for (let n = 1; n <= times; n++) {
+          try {
+            await channel.send(PRESET_MESSAGE);
+            success++;
+            console.log(`[PRESET ${n}/${times}] Sent to #${channel.name}`);
+          } catch (err) {
+            failed++;
+            console.error(`[PRESET ${n}/${times}] Failed:`, err.message);
+          }
+          if (n < times) await sleep(delaySeconds * 1000);
+        }
+
+        return { success, failed };
+      });
+    } catch (error) {
+      console.error(error);
+      await interaction.editReply({ content: `❌ Error: ${error.message}` });
+    }
+  }
 
   if (command === 'dm') {
     const userId = interaction.options.getString('userid');
     const message = interaction.options.getString('message');
+    const times = interaction.options.getInteger('times');
+    const delaySeconds = interaction.options.getInteger('delay') || 2;
 
     await interaction.deferReply({ ephemeral: true });
 
@@ -84,13 +150,15 @@ client.on('interactionCreate', async interaction => {
   if (command === 'say') {
     const channelId = interaction.options.getString('channelid');
     const message = interaction.options.getString('message');
+    const times = interaction.options.getInteger('times');
+    const delaySeconds = interaction.options.getInteger('delay') || 2;
 
     await interaction.deferReply({ ephemeral: true });
 
     try {
       const channel = await client.channels.fetch(channelId);
       if (!channel || !channel.isTextBased()) {
-        return interaction.editReply({ content: '❌ Invalid channel or not a text channel.' });
+        return interaction.editReply({ content: 'Invalid channel or not a text channel.' });
       }
 
       const confirmEmbed = new EmbedBuilder()
@@ -132,13 +200,15 @@ client.on('interactionCreate', async interaction => {
     const title = interaction.options.getString('title');
     const description = interaction.options.getString('description');
     const colorInput = interaction.options.getString('color') || '#5865F2';
+    const times = interaction.options.getInteger('times');
+    const delaySeconds = interaction.options.getInteger('delay') || 2;
 
     await interaction.deferReply({ ephemeral: true });
 
     try {
       const channel = await client.channels.fetch(channelId);
       if (!channel || !channel.isTextBased()) {
-        return interaction.editReply({ content: '❌ Invalid channel or not a text channel.' });
+        return interaction.editReply({ content: 'Invalid channel or not a text channel.' });
       }
 
       let color = 0x5865F2;
