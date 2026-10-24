@@ -2,10 +2,31 @@ require('dotenv').config();
 const { REST, Routes, SlashCommandBuilder } = require('discord.js');
 
 const commands = [
+  
+  new SlashCommandBuilder()
+    .setName('setpreset')
+    .setDescription('Set the preset message that can be sent')
+    .addStringOption(option =>
+      option.setName('message')
+        .setDescription('The message you want to save as preset')
+        .setRequired(true)),
+
+  new SlashCommandBuilder()
+    .setName('sendpreset')
+    .setDescription('Send a raid preset message')
+    .addStringOption(option =>
+      option.setName('channelid')
+        .setDescription('The channel ID to send to')
+        .setRequired(true))
+    .addIntegerOption(option =>
+      option.setName('times')
+        .setDescription('How many times to send the preset')
+        .setRequired(true)
+        .setMinValue(1)),
 
   new SlashCommandBuilder()
     .setName('dm')
-    .setDescription('bypass and dm a user')
+    .setDescription('Send a raid message')
     .addStringOption(option =>
       option.setName('userid')
         .setDescription('The user ID to DM')
@@ -28,7 +49,7 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('say')
-    .setDescription('Send any raid message you want')
+    .setDescription('Send a raid message')
     .addStringOption(option =>
       option.setName('channelid')
         .setDescription('The channel ID to send to')
@@ -51,7 +72,7 @@ const commands = [
 
   new SlashCommandBuilder()
     .setName('embed')
-    .setDescription('Send an embed to any channel a set number of times')
+    .setDescription('Send an raid message')
     .addStringOption(option =>
       option.setName('channelid')
         .setDescription('The channel ID to send to')
